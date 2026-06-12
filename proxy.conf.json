@@ -1,0 +1,7 @@
+{
+  "/api": {
+    "target": "http://mundial-2026-service-production.up.railway.app",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
