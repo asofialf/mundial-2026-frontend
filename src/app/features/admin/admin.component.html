@@ -1,0 +1,137 @@
+<div class="page">
+  <header class="page-header">
+    <a routerLink="/dashboard" class="back-link">← Volver al Dashboard</a>
+    <h1 class="page-title">Panel Admin</h1>
+    <p class="page-subtitle">Control de fases, partidos e importación de datos.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab() === 'fases'" (click)="setTab('fases')">Fases</button>
+    <button class="tab" [class.active]="activeTab() === 'partidos'" (click)="setTab('partidos')">Partidos / Resultados</button>
+    <button class="tab" [class.active]="activeTab() === 'csv'" (click)="setTab('csv')">Importar CSV</button>
+  </div>
+
+  @if (activeTab() === 'fases') {
+    <section class="panel">
+      <div class="mock-banner">
+        ⚠️ Estos toggles se guardan en localStorage de este navegador — el backend no tiene tabla de
+        configuración global, así que no se sincronizan con otros administradores ni dispositivos.
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <strong>Fase de Grupos</strong>
+          <p class="toggle-desc">Habilita/bloquea el botón "Predecir Fase de Grupos" para todos los usuarios.</p>
+        </div>
+        <button class="toggle-btn" [class.on]="isGroupPhaseActive" (click)="toggleGroupPhase()">
+          {{ isGroupPhaseActive ? 'Habilitada' : 'Bloqueada' }}
+        </button>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <strong>Fase de Eliminatorias</strong>
+          <p class="toggle-desc">Habilita/bloquea el botón "Predecir Eliminatorias" para todos los usuarios.</p>
+        </div>
+        <button class="toggle-btn" [class.on]="isKnockoutPhaseActive" (click)="toggleKnockoutPhase()">
+          {{ isKnockoutPhaseActive ? 'Habilitada' : 'Bloqueada' }}
+        </button>
+      </div>
+
+      <h3 class="subsection-title">Sub-fases de Eliminatorias</h3>
+      @for (stageId of stages; track stageId) {
+        <div class="toggle-row">
+          <div><strong>{{ stageLabel[stageId] }}</strong></div>
+          <button class="toggle-btn" [class.on]="isStageActive(stageId)" (click)="toggleStage(stageId)">
+            {{ isStageActive(stageId) ? 'Habilitada' : 'Bloqueada' }}
+          </button>
+        </div>
+      }
+    </section>
+  }
+
+  @if (activeTab() === 'partidos') {
+    <section class="panel">
+      @if (loadingMatches()) {
+        <p class="status-text">Cargando partidos...</p>
+      } @else if (!matches().length) {
+        <p class="status-text">No hay partidos cargados. Usa la pestaña "Importar CSV".</p>
+      } @else {
+        <div class="matches-list">
+          @for (match of matches(); track match.matchId) {
+            <div class="match-row">
+              <div class="match-info">
+                <span class="match-teams">{{ teamName(match.homeTeamId, match.homeTeamName) }} vs {{ teamName(match.awayTeamId, match.awayTeamName) }}</span>
+                <span class="match-kickoff">{{ match.kickOffTime | date:'dd MMM yyyy, HH:mm' }}</span>
+              </div>
+
+              <button class="lock-btn" [class.locked]="match.isLocked" (click)="toggleMatchLock(match)">
+                {{ match.isLocked ? '🔒 Bloqueado' : '🔓 Desbloqueado' }}
+              </button>
+
+              <div class="result-form">
+                <input type="number" min="0" placeholder="Local" class="score-input"
+                  [ngModel]="resultForm[match.matchId]?.homeScore ?? null"
+                  (ngModelChange)="updateResultForm(match.matchId, { homeScore: $event })">
+                <span>-</span>
+                <input type="number" min="0" placeholder="Visita" class="score-input"
+                  [ngModel]="resultForm[match.matchId]?.awayScore ?? null"
+                  (ngModelChange)="updateResultForm(match.matchId, { awayScore: $event })">
+
+                <select class="winner-select"
+                  [ngModel]="resultForm[match.matchId]?.winnerTeamId ?? null"
+                  (ngModelChange)="updateResultForm(match.matchId, { winnerTeamId: $event })">
+                  <option [ngValue]="null">Clasificado...</option>
+                  <option [ngValue]="match.homeTeamId">{{ teamName(match.homeTeamId, match.homeTeamName) }}</option>
+                  <option [ngValue]="match.awayTeamId">{{ teamName(match.awayTeamId, match.awayTeamName) }}</option>
+                </select>
+
+                <label class="penalties-label">
+                  <input type="checkbox"
+                    [ngModel]="resultForm[match.matchId]?.penalties ?? false"
+                    (ngModelChange)="updateResultForm(match.matchId, { penalties: $event })">
+                  Penales
+                </label>
+
+                <button class="save-btn" (click)="saveResult(match)">Guardar Resultado</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  @if (activeTab() === 'csv') {
+    <section class="panel">
+      <div class="mock-banner">
+        ⚠️ El CSV se procesa en el navegador: cada fila llama a POST /match/create-match (no existe
+        endpoint de importación masiva en el backend). El mapeo de nombre de equipo y ronda usa datos
+        mock — revisa los resultados de la importación abajo.
+      </div>
+
+      <p class="section-desc">Columnas esperadas: <code>round, home_team, away_team, kickoff_time</code> (fecha en formato YYYY-MM-DD HH:MM).</p>
+
+      <input type="file" accept=".csv" (change)="onCsvFileSelected($event)" [disabled]="csvImporting()">
+
+      @if (csvImporting()) {
+        <p class="status-text">Importando partidos...</p>
+      }
+
+      @if (csvError()) {
+        <p class="error-text">{{ csvError() }}</p>
+      }
+
+      @if (csvResults()) {
+        <div class="csv-results">
+          @for (r of csvResults(); track r.row) {
+            <div class="csv-result-row" [class.ok]="r.ok" [class.fail]="!r.ok">
+              {{ r.row.homeTeam }} vs {{ r.row.awayTeam }} ({{ r.row.round }}) —
+              @if (r.ok) { ✅ Importado } @else { ❌ {{ r.error }} }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

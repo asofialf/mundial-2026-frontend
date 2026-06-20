@@ -30,9 +30,16 @@ export enum LoginType {
 }
 
 // ── Config / Feature Flags ───────────────────────────────────
+// LIMITACIÓN CONOCIDA: el backend no tiene tabla/endpoint de config
+// global (ver mundial-2026-service). Estos flags se persisten en
+// localStorage del navegador del admin — NO se sincronizan entre
+// usuarios/dispositivos. Es un apaño temporal hasta que se pida un
+// endpoint real (ej. GET/PUT /config) al backend.
 export interface AppConfig {
-  isGroupPhaseActive:   boolean;
+  isGroupPhaseActive:    boolean;
   isKnockoutPhaseActive: boolean;
+  /** matchStageId -> habilitada para predicción */
+  knockoutStageActive:   Record<number, boolean>;
 }
 
 // ── Match ────────────────────────────────────────────────────

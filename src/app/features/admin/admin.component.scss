@@ -1,0 +1,196 @@
+.page {
+  min-height: 100vh;
+  background: var(--clr-bg);
+  padding: 32px 28px 64px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-header { margin-bottom: 20px; }
+
+.back-link {
+  display: inline-block;
+  color: var(--clr-text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+}
+.back-link:hover { color: var(--clr-primary); }
+
+.page-title {
+  font-size: 2rem;
+  color: var(--clr-primary);
+  margin-bottom: 6px;
+}
+
+.page-subtitle { color: var(--clr-text-secondary); margin-bottom: 12px; }
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: var(--clr-text-secondary);
+  cursor: pointer;
+
+  &.active {
+    background: var(--clr-primary-dim);
+    border-color: rgba(170, 255, 0, 0.45);
+    color: var(--clr-primary);
+  }
+}
+
+.panel {
+  background: var(--clr-surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.mock-banner {
+  font-size: 0.825rem;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 140, 0, 0.10);
+  border: 1px solid rgba(255, 140, 0, 0.30);
+  color: #FFB85C;
+  margin-bottom: 16px;
+}
+
+.status-text, .error-text { color: var(--clr-text-secondary); text-align: center; padding: 16px 0; }
+.error-text { color: var(--clr-error); }
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  &:last-child { border-bottom: none; }
+}
+
+.toggle-desc { font-size: 0.8rem; color: var(--clr-text-secondary); margin-top: 2px; }
+
+.toggle-btn {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 77, 106, 0.40);
+  background: rgba(255, 77, 106, 0.12);
+  color: var(--clr-error);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &.on {
+    border-color: rgba(170, 255, 0, 0.45);
+    background: rgba(170, 255, 0, 0.12);
+    color: var(--clr-primary);
+  }
+}
+
+.subsection-title {
+  font-size: 1rem;
+  color: var(--clr-text-secondary);
+  margin: 20px 0 4px;
+}
+
+.matches-list { display: flex; flex-direction: column; gap: 14px; }
+
+.match-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+
+.match-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.match-teams { font-weight: 700; font-family: var(--font-display); }
+.match-kickoff { font-size: 0.8rem; color: var(--clr-text-secondary); }
+
+.lock-btn {
+  align-self: flex-start;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--clr-text-secondary);
+  cursor: pointer;
+
+  &.locked { color: var(--clr-error); border-color: rgba(255, 77, 106, 0.3); }
+}
+
+.result-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.score-input { width: 64px; padding: 8px; text-align: center; }
+.winner-select { width: auto; min-width: 140px; padding: 8px; }
+
+.penalties-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.825rem;
+  input { width: auto; margin: 0; }
+}
+
+.save-btn {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--clr-primary);
+  color: #0A0E1A;
+  cursor: pointer;
+}
+
+.section-desc {
+  font-size: 0.875rem;
+  color: var(--clr-text-secondary);
+  margin-bottom: 14px;
+
+  code {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+}
+
+.csv-results { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
+
+.csv-result-row {
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+
+  &.ok { background: rgba(170, 255, 0, 0.08); color: var(--clr-success); }
+  &.fail { background: rgba(255, 77, 106, 0.08); color: var(--clr-error); }
+}

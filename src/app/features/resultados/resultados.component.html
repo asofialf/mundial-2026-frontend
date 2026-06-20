@@ -1,0 +1,46 @@
+<div class="page">
+  <header class="page-header">
+    <a routerLink="/dashboard" class="back-link">← Volver al Dashboard</a>
+    <h1 class="page-title">Resultados</h1>
+    <p class="page-subtitle">Marcadores reales de los partidos.</p>
+  </header>
+
+  @if (loading()) {
+    <p class="status-text">Cargando resultados...</p>
+  } @else if (errorMsg()) {
+    <p class="error-text">{{ errorMsg() }}</p>
+  } @else if (!results().length) {
+    <p class="status-text">Todavía no hay partidos cargados.</p>
+  } @else {
+
+    @for (stageId of allStages; track stageId) {
+      @if (resultsByStage()[stageId]?.length) {
+        <section class="stage-section">
+          <h2 class="stage-title">{{ stageLabel[stageId] }}</h2>
+
+          <div class="results-list">
+            @for (r of resultsByStage()[stageId]; track r.matchId) {
+              <div class="result-row" [class.pending]="!r.played">
+                <span class="team home">{{ teamName(r.homeTeamId, r.homeTeamName) }}</span>
+
+                @if (r.played) {
+                  <span class="score">{{ r.homeScore }} - {{ r.awayScore }}</span>
+                } @else {
+                  <span class="score pending-label">vs</span>
+                }
+
+                <span class="team away">{{ teamName(r.awayTeamId, r.awayTeamName) }}</span>
+
+                <span class="kickoff">{{ r.kickOffTime | date:'dd MMM, HH:mm' }}</span>
+
+                @if (r.played && r.penalties) {
+                  <span class="penalties-tag">Penales</span>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+    }
+  }
+</div>

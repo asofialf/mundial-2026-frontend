@@ -1,0 +1,47 @@
+<div class="page">
+  <header class="page-header">
+    <a routerLink="/dashboard" class="back-link">← Volver al Dashboard</a>
+    <h1 class="page-title">Tabla de Puntajes</h1>
+    <p class="page-subtitle">Clasificación general de todos los participantes.</p>
+
+    <div class="mock-banner">
+      ⚠️ El puntaje se calcula en el frontend (el backend no tiene endpoint de leaderboard ni de
+      standings de grupo). Los puntos de Eliminatorias solo se calculan correctamente para tu propio
+      usuario en este navegador — las predicciones de otros usuarios para esa fase no son visibles aquí
+      todavía (no hay backend que las persista).
+    </div>
+  </header>
+
+  @if (loading()) {
+    <p class="status-text">Calculando tabla de puntajes...</p>
+  } @else if (errorMsg()) {
+    <p class="error-text">{{ errorMsg() }}</p>
+  } @else if (!rows().length) {
+    <p class="status-text">Todavía no hay usuarios registrados.</p>
+  } @else {
+
+    <table class="leaderboard-table">
+      <thead>
+        <tr>
+          <th class="col-pos">Pos</th>
+          <th class="col-user">Usuario</th>
+          <th class="col-total">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.userId) {
+          <tr [class.me]="row.userId === currentUserId">
+            <td class="col-pos">
+              @if (row.rank === 1) { 🥇 }
+              @else if (row.rank === 2) { 🥈 }
+              @else if (row.rank === 3) { 🥉 }
+              @else { {{ row.rank }} }
+            </td>
+            <td class="col-user">{{ row.alias }}</td>
+            <td class="col-total">{{ row.totalPoints }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
