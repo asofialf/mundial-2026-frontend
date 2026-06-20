@@ -1,16 +1,39 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+import { LeaderboardService } from '../../core/services/leaderboard.service';
+import { LeaderboardEntry } from '../../core/models/domain.models';
 
 @Component({
   selector: 'app-leaderboard',
   standalone: true,
-  imports: [RouterLink],
-  template: `
-    <div style="min-height:100vh;background:var(--clr-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:20px;">
-      <h1 style="font-family:var(--font-display);font-size:2.2rem;color:var(--clr-card-cyan);text-align:center;">Tabla de Puntajes</h1>
-      <p style="color:var(--clr-text-secondary);">Módulo en construcción — próxima iteración</p>
-      <a routerLink="/dashboard" style="color:var(--clr-primary);font-weight:600;text-decoration:none;">← Volver al Dashboard</a>
-    </div>
-  `,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './leaderboard.component.html',
+  styleUrl: './leaderboard.component.scss',
 })
-export class LeaderboardComponent {}
+export class LeaderboardComponent implements OnInit {
+  private auth = inject(AuthService);
+  private leaderboardService = inject(LeaderboardService);
+
+  loading = signal(true);
+  errorMsg = signal<string | null>(null);
+  rows = signal<LeaderboardEntry[]>([]);
+
+  get currentUserId(): number | undefined {
+    return this.auth.session()?.userId;
+  }
+
+  ngOnInit(): void {
+    this.leaderboardService.getLeaderboard().subscribe({
+      next: (rows) => {
+        this.rows.set(rows);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.errorMsg.set('No se pudo cargar la tabla de puntajes.');
+        this.loading.set(false);
+      },
+    });
+  }
+}

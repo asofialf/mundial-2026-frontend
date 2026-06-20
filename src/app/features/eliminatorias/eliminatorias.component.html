@@ -1,0 +1,107 @@
+<div class="page">
+  <header class="page-header">
+    <a routerLink="/dashboard" class="back-link">← Volver al Dashboard</a>
+    <h1 class="page-title">Eliminatorias</h1>
+    <p class="page-subtitle">Predice marcador, clasificado y si habrá penales en cada partido.</p>
+
+    @if (knockoutPhaseLocked) {
+      <div class="lock-banner">🔒 La fase de eliminatorias está bloqueada por el administrador.</div>
+    }
+  </header>
+
+  @if (loading()) {
+    <p class="status-text">Cargando partidos...</p>
+  } @else {
+
+    <div class="stage-tabs">
+      @for (stageId of stages; track stageId) {
+        <button
+          class="stage-tab"
+          [class.active]="activeStage() === stageId"
+          [disabled]="!isStageEnabled(stageId)"
+          (click)="setActiveStage(stageId)">
+          {{ stageLabel[stageId] }}
+          @if (!isStageEnabled(stageId)) { 🔒 }
+        </button>
+      }
+    </div>
+
+    @if (errorMsg()) {
+      <p class="error-text">{{ errorMsg() }}</p>
+    }
+
+    @if (!matchesForActiveStage().length) {
+      <p class="status-text">No hay partidos disponibles para esta ronda todavía.</p>
+    }
+
+    <div class="matches-list">
+      @for (match of matchesForActiveStage(); track match.matchId) {
+        <div class="match-card" [class.locked]="isMatchLocked(match)">
+          <div class="match-header">
+            <span class="match-teams">
+              {{ teamName(match.homeTeamId, match.homeTeamName) }} vs {{ teamName(match.awayTeamId, match.awayTeamName) }}
+            </span>
+            <span class="match-kickoff">{{ match.kickOffTime | date:'dd MMM yyyy, HH:mm' }}</span>
+          </div>
+
+          <div class="match-form">
+            <div class="score-row">
+              <label class="field-label">{{ teamName(match.homeTeamId, match.homeTeamName) }}</label>
+              <input type="number" min="0" [disabled]="isMatchLocked(match)"
+                [ngModel]="forms()[match.matchId]?.scoreTeamA ?? null"
+                (ngModelChange)="updateForm(match.matchId, { scoreTeamA: $event })"
+                name="scoreA-{{match.matchId}}">
+
+              <span class="score-sep">-</span>
+
+              <input type="number" min="0" [disabled]="isMatchLocked(match)"
+                [ngModel]="forms()[match.matchId]?.scoreTeamB ?? null"
+                (ngModelChange)="updateForm(match.matchId, { scoreTeamB: $event })"
+                name="scoreB-{{match.matchId}}">
+              <label class="field-label">{{ teamName(match.awayTeamId, match.awayTeamName) }}</label>
+            </div>
+
+            <div class="radio-row">
+              <span class="field-label">Clasificado</span>
+              <label class="radio-option">
+                <input type="radio" name="advancing-{{match.matchId}}" [disabled]="isMatchLocked(match)"
+                  [checked]="forms()[match.matchId]?.advancingTeamId === match.homeTeamId"
+                  (change)="updateForm(match.matchId, { advancingTeamId: match.homeTeamId })">
+                {{ teamName(match.homeTeamId, match.homeTeamName) }}
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="advancing-{{match.matchId}}" [disabled]="isMatchLocked(match)"
+                  [checked]="forms()[match.matchId]?.advancingTeamId === match.awayTeamId"
+                  (change)="updateForm(match.matchId, { advancingTeamId: match.awayTeamId })">
+                {{ teamName(match.awayTeamId, match.awayTeamName) }}
+              </label>
+            </div>
+
+            <div class="radio-row">
+              <span class="field-label">¿Habrá penales?</span>
+              <label class="radio-option">
+                <input type="radio" name="penales-{{match.matchId}}" [disabled]="isMatchLocked(match)"
+                  [checked]="forms()[match.matchId]?.hasPenalties === true"
+                  (change)="updateForm(match.matchId, { hasPenalties: true })">
+                Sí
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="penales-{{match.matchId}}" [disabled]="isMatchLocked(match)"
+                  [checked]="forms()[match.matchId]?.hasPenalties === false"
+                  (change)="updateForm(match.matchId, { hasPenalties: false })">
+                No
+              </label>
+            </div>
+
+            <button class="btn-primary predict-btn" [disabled]="isMatchLocked(match) || isSaving(match.matchId)" (click)="savePrediction(match)">
+              @if (isMatchLocked(match)) { Bloqueado 🔒 }
+              @else if (isSaving(match.matchId)) { Guardando... }
+              @else if (isSaved(match.matchId)) { Actualizar Predicción }
+              @else { Predecir Partido }
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

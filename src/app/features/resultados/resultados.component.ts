@@ -1,16 +1,89 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { MatchService } from '../../core/services/match.service';
+import { GroupService } from '../../core/services/group.service';
+import { KNOCKOUT_STAGE_ORDER, MatchStageId, MATCH_STAGE_LABEL } from '../../core/data/match-stage.data';
+
+interface ResultView {
+  matchId: number;
+  homeTeamId: number;
+  awayTeamId: number;
+  homeTeamName: string;
+  awayTeamName: string;
+  kickOffTime: string;
+  matchStageId: number;
+  homeScore: number | null;
+  awayScore: number | null;
+  penalties: boolean | null;
+  winnerTeamId: number | null;
+  played: boolean;
+}
 
 @Component({
   selector: 'app-resultados',
   standalone: true,
-  imports: [RouterLink],
-  template: `
-    <div style="min-height:100vh;background:var(--clr-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:20px;">
-      <h1 style="font-family:var(--font-display);font-size:2.2rem;color:var(--clr-card-purple);text-align:center;">Resultados</h1>
-      <p style="color:var(--clr-text-secondary);">Módulo en construcción — próxima iteración</p>
-      <a routerLink="/dashboard" style="color:var(--clr-primary);font-weight:600;text-decoration:none;">← Volver al Dashboard</a>
-    </div>
-  `,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './resultados.component.html',
+  styleUrl: './resultados.component.scss',
 })
-export class ResultadosComponent {}
+export class ResultadosComponent implements OnInit {
+  private matchService = inject(MatchService);
+  private groupService = inject(GroupService);
+
+  readonly stageLabel = MATCH_STAGE_LABEL;
+  readonly allStages = [MatchStageId.GROUP, ...KNOCKOUT_STAGE_ORDER];
+
+  loading = signal(true);
+  errorMsg = signal<string | null>(null);
+  results = signal<ResultView[]>([]);
+
+  readonly resultsByStage = computed<Record<number, ResultView[]>>(() => {
+    const grouped: Record<number, ResultView[]> = {};
+    this.results().forEach(r => {
+      grouped[r.matchStageId] = grouped[r.matchStageId] ?? [];
+      grouped[r.matchStageId].push(r);
+    });
+    Object.values(grouped).forEach(list =>
+      list.sort((a, b) => new Date(a.kickOffTime).getTime() - new Date(b.kickOffTime).getTime())
+    );
+    return grouped;
+  });
+
+  ngOnInit(): void {
+    this.groupService.ensureLoaded().subscribe();
+    this.matchService.getMatches().subscribe({
+      next: (raw) => {
+        const results: ResultView[] = (raw ?? []).map(r => {
+          const homeScore = r['homeScore'] ?? r['home_score'];
+          const awayScore = r['awayScore'] ?? r['away_score'];
+          return {
+            matchId:      Number(r['matchId'] ?? r['match_id']),
+            homeTeamId:   Number(r['homeTeamId'] ?? r['home_team_id']),
+            awayTeamId:   Number(r['awayTeamId'] ?? r['away_team_id']),
+            homeTeamName: String(r['homeTeamName'] ?? r['home_team_name'] ?? ''),
+            awayTeamName: String(r['awayTeamName'] ?? r['away_team_name'] ?? ''),
+            kickOffTime:  String(r['kickOffTime'] ?? r['kick_off_time'] ?? r['kickoffTime'] ?? ''),
+            matchStageId: Number(r['matchStageId'] ?? r['match_stage_id']),
+            homeScore:    homeScore == null ? null : Number(homeScore),
+            awayScore:    awayScore == null ? null : Number(awayScore),
+            penalties:    (r['penalties'] ?? r['penalties']) == null ? null : Number(r['penalties']) === 1,
+            winnerTeamId: (r['winnerTeamId'] ?? r['winner_team_id']) == null ? null : Number(r['winnerTeamId'] ?? r['winner_team_id']),
+            played:       homeScore != null && awayScore != null,
+          };
+        }).filter(m => !!m.matchId);
+
+        this.results.set(results);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.errorMsg.set('No se pudieron cargar los resultados.');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  teamName(countryId: number, fallback?: string): string {
+    return this.groupService.countryName(countryId, fallback);
+  }
+}
