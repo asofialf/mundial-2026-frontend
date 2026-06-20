@@ -111,13 +111,20 @@ export class AuthService {
        throw new Error('Contraseña incorrecta');
     }
 
+    // rol_id=1 -> admin (suposición: el registro normal hardcodea rol_id=2
+    // para usuarios nuevos — ver UserRepositoryImpl.createUser en el backend).
+    // Confirmar contra una tabla de roles real si existe.
+    const rolId = Number(res['rolId'] ?? res['rol_id']);
+    const role: 'ROLE_USER' | 'ROLE_ADMIN' =
+      (res['role'] as 'ROLE_USER' | 'ROLE_ADMIN') ?? (rolId === 1 ? 'ROLE_ADMIN' : 'ROLE_USER');
+
     const session: AuthSession = {
       userId:   (res['userId'] ?? res['user_id'] ?? res['id']) as number,
       email:    res['email'] as string | undefined,
       username: res['username'] as string | undefined,
       alias:    res['alias'] as string | undefined,
       icon:     res['icon'] as string | undefined,
-      role:     (res['role'] ?? 'ROLE_USER') as 'ROLE_USER' | 'ROLE_ADMIN',
+      role,
       loggedAt: Date.now(),
     };
 

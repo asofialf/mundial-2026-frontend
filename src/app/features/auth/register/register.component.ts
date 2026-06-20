@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -19,9 +19,16 @@ interface Avatar {
   styleUrl: './register.component.scss',
 })
 export class RegisterComponent {
-  step = 1;
+  // Estado mutado dentro de callbacks async (subscribe) -> debe ser signal
+  // en una app zoneless, o la vista nunca se refresca cuando llega la
+  // respuesta HTTP (el spinner se queda pegado, el paso nunca avanza).
+  step      = signal(1);
+  isLoading = signal(false);
+  fieldError = signal<FieldError>(null);
+  errorMessage = signal('');
 
-  // Paso 1
+  // Paso 1 — mutados solo por eventos de template (ngModel/click), está
+  // bien que sean propiedades planas: el evento del DOM sí dispara CD.
   email    = '';
   password = '';
   showPassword = false;
@@ -30,11 +37,6 @@ export class RegisterComponent {
   name           = '';
   alias          = '';
   selectedAvatar = 'ball';
-
-  // Estado
-  isLoading    = false;
-  fieldError: FieldError = null;
-  errorMessage = '';
 
   // userId guardado entre pasos
   private createdUserId: number | null = null;
@@ -58,6 +60,10 @@ export class RegisterComponent {
     private router: Router,
   ) {}
 
+  goToStep(step: number): void {
+    this.step.set(step);
+  }
+
   // ── Paso 1: crear usuario ────────────────────────────────
   onStep1Submit(): void {
     this._clearErrors();
@@ -71,18 +77,18 @@ export class RegisterComponent {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     this.authService.createUser(this.email.trim(), this.password).subscribe({
       next: (res) => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         // El backend retorna el userId — ajusta el campo según la respuesta real
         this.createdUserId = (res['userId'] ?? res['user_id'] ?? res['id']) as number;
-        this.step = 2;
+        this.step.set(2);
       },
-      error: (err: Error) => {
-        this.isLoading = false;
-        const msg = err?.message ?? 'Error al crear la cuenta.';
+      error: (err) => {
+        this.isLoading.set(false);
+        const msg = this._extractErrorMessage(err, 'Error al crear la cuenta.');
         if (msg.toLowerCase().includes('correo')) {
           this._setError('email', msg);
         } else if (msg.toLowerCase().includes('contraseña')) {
@@ -116,7 +122,7 @@ export class RegisterComponent {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     this.authService.createProfile(
       this.createdUserId,
@@ -125,25 +131,30 @@ export class RegisterComponent {
       this.selectedAvatar
     ).subscribe({
       next: () => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         this.router.navigate(['/login'], {
           queryParams: { registered: 'true' }
         });
       },
-      error: (err: Error) => {
-        this.isLoading = false;
-        this._setError('general', err?.message ?? 'Error al crear el perfil.');
+      error: (err) => {
+        this.isLoading.set(false);
+        this._setError('general', this._extractErrorMessage(err, 'Error al crear el perfil.'));
       }
     });
   }
 
+  private _extractErrorMessage(err: unknown, fallback: string): string {
+    const httpError = err as { error?: { message?: string }; message?: string };
+    return httpError?.error?.message ?? httpError?.message ?? fallback;
+  }
+
   private _setError(field: FieldError, message: string): void {
-    this.fieldError   = field;
-    this.errorMessage = message;
+    this.fieldError.set(field);
+    this.errorMessage.set(message);
   }
 
   private _clearErrors(): void {
-    this.fieldError   = null;
-    this.errorMessage = '';
+    this.fieldError.set(null);
+    this.errorMessage.set('');
   }
 }
