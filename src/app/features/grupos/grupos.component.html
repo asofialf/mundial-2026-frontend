@@ -25,34 +25,32 @@
 
           <div class="place-row">
             <label class="place-label">1° Lugar</label>
-            <select
-              [disabled]="locked"
-              [ngModel]="picks()[group.groupId]?.firstPlaceId ?? null"
-              (ngModelChange)="onFirstPlaceChange(group.groupId, $event)"
-              name="first-{{group.groupId}}">
-              <option [ngValue]="null">— Selecciona —</option>
+            <div class="place-chips">
               @for (c of group.countries; track c.countryId) {
-                <option [ngValue]="c.countryId" [disabled]="c.countryId === picks()[group.groupId]?.secondPlaceId">
+                <button type="button" class="place-chip"
+                  [class.selected]="picks()[group.groupId]?.firstPlaceId === c.countryId"
+                  [disabled]="locked || picks()[group.groupId]?.secondPlaceId === c.countryId"
+                  (click)="onFirstPlaceChange(group.groupId, c.countryId)">
+                  @if (c.image) { <img class="flag-icon" [src]="c.image" alt=""> }
                   {{ c.name }}
-                </option>
+                </button>
               }
-            </select>
+            </div>
           </div>
 
           <div class="place-row">
             <label class="place-label">2° Lugar</label>
-            <select
-              [disabled]="locked"
-              [ngModel]="picks()[group.groupId]?.secondPlaceId ?? null"
-              (ngModelChange)="onSecondPlaceChange(group.groupId, $event)"
-              name="second-{{group.groupId}}">
-              <option [ngValue]="null">— Selecciona —</option>
+            <div class="place-chips">
               @for (c of group.countries; track c.countryId) {
-                <option [ngValue]="c.countryId" [disabled]="c.countryId === picks()[group.groupId]?.firstPlaceId">
+                <button type="button" class="place-chip"
+                  [class.selected]="picks()[group.groupId]?.secondPlaceId === c.countryId"
+                  [disabled]="locked || picks()[group.groupId]?.firstPlaceId === c.countryId"
+                  (click)="onSecondPlaceChange(group.groupId, c.countryId)">
+                  @if (c.image) { <img class="flag-icon" [src]="c.image" alt=""> }
                   {{ c.name }}
-                </option>
+                </button>
               }
-            </select>
+            </div>
           </div>
         </div>
       }
@@ -67,6 +65,7 @@
           <label class="third-chip" [class.selected]="isThirdSelected(c.countryId)" [class.disabled]="locked">
             <input type="checkbox" [checked]="isThirdSelected(c.countryId)" [disabled]="locked"
               (change)="toggleThird(c.countryId)">
+            @if (c.image) { <img class="flag-icon" [src]="c.image" alt=""> }
             {{ c.name }}
           </label>
         }

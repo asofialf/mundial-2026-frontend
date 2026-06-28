@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -36,7 +36,7 @@ interface MatchPredictionForm {
   templateUrl: './eliminatorias.component.html',
   styleUrl: './eliminatorias.component.scss',
 })
-export class EliminatoriasComponent implements OnInit {
+export class EliminatoriasComponent implements OnInit, OnDestroy {
   private auth        = inject(AuthService);
   private matchService = inject(MatchService);
   private configService = inject(ConfigService);
@@ -53,6 +53,13 @@ export class EliminatoriasComponent implements OnInit {
   activeStage = signal<number>(KNOCKOUT_STAGE_ORDER[0]);
   allMatches = signal<MatchView[]>([]);
   forms = signal<Record<number, MatchPredictionForm>>({});
+
+  // "Reloj" reactivo: en una app zoneless, si nadie interactúa con la
+  // página el template nunca se re-evalúa, así que isMatchLocked() podía
+  // quedar mostrando "desbloqueado" por horas aunque ya pasó el cutoff.
+  // Actualizar este signal periódicamente fuerza el re-render.
+  private now = signal(Date.now());
+  private nowTimer: ReturnType<typeof setInterval> | null = null;
 
   readonly matchesForActiveStage = computed<MatchView[]>(() =>
     this.allMatches()
@@ -71,6 +78,11 @@ export class EliminatoriasComponent implements OnInit {
   ngOnInit(): void {
     this.groupService.ensureLoaded().subscribe();
     this._loadMatches();
+    this.nowTimer = setInterval(() => this.now.set(Date.now()), 30000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.nowTimer) clearInterval(this.nowTimer);
   }
 
   setActiveStage(stageId: number): void {
@@ -87,7 +99,7 @@ export class EliminatoriasComponent implements OnInit {
     // ya que el backend no implementa esta regla automáticamente).
     const kickoff = new Date(match.kickOffTime).getTime();
     const oneHourBefore = kickoff - 60 * 60 * 1000;
-    return Date.now() >= oneHourBefore;
+    return this.now() >= oneHourBefore;
   }
 
   updateForm(matchId: number, partial: Partial<MatchPredictionForm>): void {
@@ -112,7 +124,7 @@ export class EliminatoriasComponent implements OnInit {
     this.saving.set(match.matchId);
 
     const request$ = form.predictionId
-      ? this.predictionService.updateUserKnockoutPrediction(form.predictionId, form.scoreTeamA, form.scoreTeamB, form.advancingTeamId, form.hasPenalties)
+      ? this.predictionService.updateUserKnockoutPrediction(form.predictionId, match.matchId, form.scoreTeamA, form.scoreTeamB, form.advancingTeamId, form.hasPenalties)
       : this.predictionService.createUserKnockoutPrediction(match.matchId, userId, form.scoreTeamA, form.scoreTeamB, form.advancingTeamId, form.hasPenalties);
 
     request$.subscribe({
@@ -121,11 +133,23 @@ export class EliminatoriasComponent implements OnInit {
         this.updateForm(match.matchId, { predictionId: predictionId ?? null });
         this.saving.set(null);
       },
-      error: () => {
-        this.errorMsg.set('No se pudo guardar la predicción.');
+      error: (err) => {
+        // 409 = el backend rechazó por bloqueo de horario (validación real,
+        // la del frontend es solo cosmética). Mostramos el motivo exacto y
+        // refrescamos los partidos para que el botón se actualice sin que
+        // el usuario tenga que recargar la página a mano.
+        const backendMessage = err?.error?.message;
+        this.errorMsg.set(backendMessage ?? 'No se pudo guardar la predicción.');
         this.saving.set(null);
+        if (err?.status === 409) {
+          this._loadMatches();
+        }
       },
     });
+  }
+
+  dismissError(): void {
+    this.errorMsg.set(null);
   }
 
   isSaved(matchId: number): boolean {
@@ -138,6 +162,10 @@ export class EliminatoriasComponent implements OnInit {
 
   teamName(countryId: number, fallback?: string): string {
     return this.groupService.countryName(countryId, fallback);
+  }
+
+  flagUrl(countryId: number): string | undefined {
+    return this.groupService.countryImage(countryId);
   }
 
   private _emptyForm(): MatchPredictionForm {

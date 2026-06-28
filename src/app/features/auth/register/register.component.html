@@ -11,9 +11,9 @@
 
       <!-- ── Indicador de pasos ──────────────────────── -->
       <div class="steps-indicator">
-        <div class="step" [class.active]="step >= 1" [class.done]="step > 1">
+        <div class="step" [class.active]="step() >= 1" [class.done]="step() > 1">
           <div class="step-dot">
-            @if (step > 1) {
+            @if (step() > 1) {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -21,8 +21,8 @@
           </div>
           <span>Cuenta</span>
         </div>
-        <div class="step-line" [class.done]="step > 1"></div>
-        <div class="step" [class.active]="step >= 2">
+        <div class="step-line" [class.done]="step() > 1"></div>
+        <div class="step" [class.active]="step() >= 2">
           <div class="step-dot">2</div>
           <span>Perfil</span>
         </div>
@@ -31,15 +31,15 @@
       <!-- ═══════════════════════════════════════════════
            PASO 1: Cuenta (email + password)
            ═══════════════════════════════════════════════ -->
-      @if (step === 1) {
+      @if (step() === 1) {
       <h1 class="register-title">Crear Cuenta</h1>
 
       <div class="form-group">
         <label for="reg-email">Correo electrónico</label>
         <input id="reg-email" type="email" placeholder="tu@correo.com" [(ngModel)]="email"
-          [class.error]="fieldError === 'email'" autocomplete="email" />
-        @if (fieldError === 'email') {
-        <span class="field-error">{{ errorMessage }}</span>
+          [class.error]="fieldError() === 'email'" autocomplete="email" />
+        @if (fieldError() === 'email') {
+        <span class="field-error">{{ errorMessage() }}</span>
         }
       </div>
 
@@ -48,7 +48,7 @@
         <div class="password-wrapper">
           <input id="reg-password" [type]="showPassword ? 'text' : 'password'"
             placeholder="Mínimo 8 caracteres y un número" [(ngModel)]="password"
-            [class.error]="fieldError === 'password'" autocomplete="new-password" />
+            [class.error]="fieldError() === 'password'" autocomplete="new-password" />
           <button type="button" class="toggle-password" (click)="showPassword = !showPassword">
             @if (showPassword) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -64,17 +64,17 @@
             }
           </button>
         </div>
-        @if (fieldError === 'password') {
-        <span class="field-error">{{ errorMessage }}</span>
+        @if (fieldError() === 'password') {
+        <span class="field-error">{{ errorMessage() }}</span>
         }
       </div>
 
-      @if (fieldError === 'general') {
-      <div class="error-banner">{{ errorMessage }}</div>
+      @if (fieldError() === 'general') {
+      <div class="error-banner">{{ errorMessage() }}</div>
       }
 
-      <button class="btn-primary" (click)="onStep1Submit()" [disabled]="isLoading">
-        @if (isLoading) { <span class="spinner"></span> Creando cuenta... }
+      <button class="btn-primary" (click)="onStep1Submit()" [disabled]="isLoading()">
+        @if (isLoading()) { <span class="spinner"></span> Creando cuenta... }
         @else { Continuar }
       </button>
 
@@ -86,25 +86,25 @@
       <!-- ═══════════════════════════════════════════════
            PASO 2: Perfil (nombre, alias, avatar)
            ═══════════════════════════════════════════════ -->
-      @if (step === 2) {
+      @if (step() === 2) {
       <h1 class="register-title">Tu Perfil</h1>
       <p class="register-subtitle">Personaliza cómo te verán los demás</p>
 
       <div class="form-group">
         <label for="reg-name">Nombre completo</label>
         <input id="reg-name" type="text" placeholder="Tu nombre" [(ngModel)]="name"
-          [class.error]="fieldError === 'name'" />
-        @if (fieldError === 'name') {
-        <span class="field-error">{{ errorMessage }}</span>
+          [class.error]="fieldError() === 'name'" />
+        @if (fieldError() === 'name') {
+        <span class="field-error">{{ errorMessage() }}</span>
         }
       </div>
 
       <div class="form-group">
         <label for="reg-alias">Alias (se mostrará en el leaderboard)</label>
         <input id="reg-alias" type="text" placeholder="ej. el_crack_2026" [(ngModel)]="alias"
-          [class.error]="fieldError === 'alias'" />
-        @if (fieldError === 'alias') {
-        <span class="field-error">{{ errorMessage }}</span>
+          [class.error]="fieldError() === 'alias'" />
+        @if (fieldError() === 'alias') {
+        <span class="field-error">{{ errorMessage() }}</span>
         }
       </div>
 
@@ -119,21 +119,21 @@
           </button>
           }
         </div>
-        @if (fieldError === 'avatar') {
-        <span class="field-error">{{ errorMessage }}</span>
+        @if (fieldError() === 'avatar') {
+        <span class="field-error">{{ errorMessage() }}</span>
         }
       </div>
 
-      @if (fieldError === 'general') {
-      <div class="error-banner">{{ errorMessage }}</div>
+      @if (fieldError() === 'general') {
+      <div class="error-banner">{{ errorMessage() }}</div>
       }
 
       <div class="step2-actions">
-        <button class="btn-secondary" (click)="step = 1" [disabled]="isLoading">
+        <button class="btn-secondary" (click)="goToStep(1)" [disabled]="isLoading()">
           ← Volver
         </button>
-        <button class="btn-primary" (click)="onStep2Submit()" [disabled]="isLoading">
-          @if (isLoading) { <span class="spinner"></span> Guardando... }
+        <button class="btn-primary" (click)="onStep2Submit()" [disabled]="isLoading()">
+          @if (isLoading()) { <span class="spinner"></span> Guardando... }
           @else { Crear perfil }
         </button>
       </div>

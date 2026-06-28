@@ -26,10 +26,6 @@
       }
     </div>
 
-    @if (errorMsg()) {
-      <p class="error-text">{{ errorMsg() }}</p>
-    }
-
     @if (!matchesForActiveStage().length) {
       <p class="status-text">No hay partidos disponibles para esta ronda todavía.</p>
     }
@@ -39,9 +35,11 @@
         <div class="match-card" [class.locked]="isMatchLocked(match)">
           <div class="match-header">
             <span class="match-teams">
+              @if (flagUrl(match.homeTeamId)) { <img class="flag-icon" [src]="flagUrl(match.homeTeamId)" alt=""> }
               {{ teamName(match.homeTeamId, match.homeTeamName) }} vs {{ teamName(match.awayTeamId, match.awayTeamName) }}
+              @if (flagUrl(match.awayTeamId)) { <img class="flag-icon" [src]="flagUrl(match.awayTeamId)" alt=""> }
             </span>
-            <span class="match-kickoff">{{ match.kickOffTime | date:'dd MMM yyyy, HH:mm' }}</span>
+            <span class="match-kickoff">{{ match.kickOffTime | date:'dd MMM yyyy, HH:mm':'-0500' }} (PE)</span>
           </div>
 
           <div class="match-form">
@@ -102,6 +100,13 @@
           </div>
         </div>
       }
+    </div>
+  }
+
+  @if (errorMsg()) {
+    <div class="toast toast-error">
+      <span>⚠️ {{ errorMsg() }}</span>
+      <button class="toast-close" (click)="dismissError()" aria-label="Cerrar">✕</button>
     </div>
   }
 </div>

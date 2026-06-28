@@ -15,18 +15,23 @@ type FieldError = 'email' | 'username' | 'password' | 'general' | null;
   styleUrl: './login.component.scss',
 })
 export class LoginComponent {
-  // ── Estado del formulario ────────────────────────────────
+  // ── Estado mutado dentro de callbacks async (subscribe) ──
+  // Debe ser signal: en una app zoneless (provideZonelessChangeDetection),
+  // mutar una propiedad plana dentro de un subscribe no refresca la vista
+  // — el spinner se queda pegado y la navegación post-login no se refleja.
+  isLoading = signal(false);
+  hasError  = signal(false);
+  fieldError = signal<FieldError>(null);
+  errorMessage = signal('');
+
+  // ── Estado del formulario — mutado por eventos de template, está bien
+  // que sean propiedades planas (el evento del DOM sí dispara CD) ──────
   loginMode: LoginMode = 'email';
 
   emailValue    = '';
   usernameValue = '';
   passwordValue = '';
   showPassword  = false;
-
-  isLoading    = false;
-  hasError     = false;
-  fieldError: FieldError = null;
-  errorMessage = '';
 
   constructor(
     private authService: AuthService,
@@ -59,7 +64,7 @@ export class LoginComponent {
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     const login$ = this.loginMode === 'email'
       ? this.authService.loginWithEmail(this.emailValue.trim(), this.passwordValue)
@@ -67,12 +72,12 @@ export class LoginComponent {
 
     login$.subscribe({
       next: () => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         this.router.navigate(['/dashboard']);
       },
-      error: (err: Error) => {
-        this.isLoading = false;
-        const msg = err?.message ?? 'Credenciales incorrectas. Intenta de nuevo.';
+      error: (err) => {
+        this.isLoading.set(false);
+        const msg = this._extractErrorMessage(err, 'Credenciales incorrectas. Intenta de nuevo.');
         // Mapeamos mensajes del backend a campos específicos
         if (msg.toLowerCase().includes('contraseña')) {
           this._setError('password', 'Contraseña incorrecta');
@@ -86,20 +91,25 @@ export class LoginComponent {
     });
   }
 
+  private _extractErrorMessage(err: unknown, fallback: string): string {
+    const httpError = err as { error?: { message?: string }; message?: string };
+    return httpError?.error?.message ?? httpError?.message ?? fallback;
+  }
+
   private _setError(field: FieldError, message: string): void {
-    this.fieldError   = field;
-    this.errorMessage = message;
-    this.hasError     = true;
+    this.fieldError.set(field);
+    this.errorMessage.set(message);
+    this.hasError.set(true);
   }
 
   private _clearErrors(): void {
-    this.fieldError   = null;
-    this.errorMessage = '';
-    this.hasError     = false;
+    this.fieldError.set(null);
+    this.errorMessage.set('');
+    this.hasError.set(false);
   }
 
   private _triggerShake(): void {
-    this.hasError = true;
-    setTimeout(() => { this.hasError = false; }, 600);
+    this.hasError.set(true);
+    setTimeout(() => { this.hasError.set(false); }, 600);
   }
 }
