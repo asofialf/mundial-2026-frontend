@@ -1,24 +1,42 @@
+import { MatchStageId } from '../data/match-stage.data';
+
 /**
  * Reglas de puntaje del Mundial Predictor.
  *
  * Edita estos números para cambiar el sistema de puntos sin tocar la
- * lógica de cálculo (ver LeaderboardComponent).
+ * lógica de cálculo (ver LeaderboardComponent / LeaderboardService.java).
+ *
+ * Eliminatorias — puntaje BASE por partido (máximo 8 pts):
+ *   Marcador exacto (90 min): 2 pts
+ *   Equipo clasificado:        5 pts
+ *   Penales sí/no:             1 pt
+ * Luego se multiplica por el multiplicador de ronda.
  */
 export const SCORING_RULES = {
   grupos: {
-    /** Acertar 1° Y 2° lugar exactos (en el orden correcto). */
     primeroYSegundoExacto: 3,
-    /** Acertar un equipo dentro del top 2, pero en el lugar incorrecto. */
     equipoEnTop2SinOrden: 1,
-    /** Por cada uno de los 8 "mejores terceros" acertado. */
     mejorTerceroAcertado: 1,
   },
   eliminatorias: {
     /** Marcador exacto en los 90 minutos. */
-    marcadorExacto: 3,
-    /** Solo se acertó el equipo que clasifica (sin marcador exacto). */
-    clasificadoAcertado: 1,
+    marcadorExacto: 2,
+    /** Equipo que avanza acertado (sin marcador exacto). */
+    clasificadoAcertado: 5,
     /** Acertar si hubo o no definición por penales. */
     penalesAcertado: 1,
+    /** Máximo base por partido antes del multiplicador. */
+    maxBase: 8,
   },
+  /**
+   * Multiplicador por ronda. Se aplica al puntaje base del partido.
+   * Resultado se redondea al entero más cercano.
+   */
+  stageMultiplier: {
+    [MatchStageId.ROUND_OF_32]: 1,
+    [MatchStageId.ROUND_OF_16]: 1.5,
+    [MatchStageId.QUARTER]:     1.5,
+    [MatchStageId.SEMI]:        2,
+    [MatchStageId.FINAL]:       3,
+  } as Record<number, number>,
 } as const;
